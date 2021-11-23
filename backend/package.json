@@ -11,5 +11,8 @@
     "url": "git+https://github.com/RBethaz/BethazRaphael_6_19112021"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
