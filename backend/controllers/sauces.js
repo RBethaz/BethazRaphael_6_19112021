@@ -1,33 +1,17 @@
 const Product = require('../models/product');
 
 exports.createProduct = (req, res, next) => {
-  const product = new Product({
-    userId: req.body.userId,
-    name: req.body.name,
-    manufacturer: req.body.manufacturer,
-    description: req.body.description,
-    mainPepper: req.body.mainPepper,
-    imageUrl: req.body.imageUrl,
-    heat: req.body.heat,
-    likes: req.body.likes,
-    dislikes: req.body.dislikes,
-    usersLiked: req.body.usersLiked,
-    usersDisliked: req.body.usersDisliked
-  });
-  product.save().then(
-    () => {
-      res.status(201).json({
-        message: 'Post saved successfully!'
-      });
-    }
-  ).catch(
-    (error) => {
-      res.status(400).json({
-        error: error
-      });
-    }
-  );
-};
+
+  const productObject = JSON.parse(req.body.product);
+    delete productObject._id;
+    const product = new Product({
+      ...productObject,
+      imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    });
+    product.save()
+      .then(() => res.status(201).json({ message: 'Objet enregistré !'}))
+      .catch(error => res.status(400).json({ error }));
+  };
 
 exports.getOneProduct = (req, res, next) => {
   Product.findOne({
@@ -46,28 +30,16 @@ exports.getOneProduct = (req, res, next) => {
 };
 
 exports.modifyProduct = (req, res, next) => {
-  const product = new Product({
-    _id: req.params.id,
-    title: req.body.title,
-    description: req.body.description,
-    imageUrl: req.body.imageUrl,
-    price: req.body.price,
-    userId: req.body.userId
-  });
-  Product.updateOne({_id: req.params.id}, product).then(
-    () => {
-      res.status(201).json({
-        message: 'Product updated successfully!'
-      });
-    }
-  ).catch(
-    (error) => {
-      res.status(400).json({
-        error: error
-      });
-    }
-  );
-};
+  
+  const productObject = req.file ?
+      {
+        ...JSON.parse(req.body.product),
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+      } : { ...req.body };
+    Product.updateOne({ _id: req.params.id }, { ...productObject, _id: req.params.id })
+      .then(() => res.status(200).json({ message: 'Objet modifié !'}))
+      .catch(error => res.status(400).json({ error }));
+  };
 
 exports.deleteProduct = (req, res, next) => {
     Product.deleteOne({_id: req.params.id}).then(
