@@ -1,26 +1,25 @@
-const Product = require('../models/product');
+const Sauce = require('../models/sauce');
 const fs = require('fs');
 
 
-exports.createProduct = (req, res, next) => {
-
-  const productObject = JSON.parse(req.body.product);
-    delete productObject._id;
-    const product = new Product({
-      ...productObject,
+exports.createSauce = (req, res, next) => {
+  const sauceObject = JSON.parse(req.body.sauce);
+  delete sauceObject._id;
+  const sauce = new Sauce({
+    ...sauceObject,
       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     });
-    product.save()
+    sauce.save()
       .then(() => res.status(201).json({ message: 'Objet enregistré !'}))
       .catch(error => res.status(400).json({ error }));
   };
 
-exports.getOneProduct = (req, res, next) => {
-  Product.findOne({
+  exports.getOneSauce = (req, res, next) => {
+    Sauce.findOne({
     _id: req.params.id
   }).then(
-    (product) => {
-      res.status(200).json(product);
+    (sauce) => {
+      res.status(200).json(sauce);
     }
   ).catch(
     (error) => {
@@ -31,24 +30,23 @@ exports.getOneProduct = (req, res, next) => {
   );
 };
 
-exports.modifyProduct = (req, res, next) => {
-  
-  const productObject = req.file ?
+exports.modifySauce = (req, res, next) => {
+  const sauceObject = req.file ?
       {
-        ...JSON.parse(req.body.product),
+        ...JSON.parse(req.body.sauce),
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
       } : { ...req.body };
-    Product.updateOne({ _id: req.params.id }, { ...productObject, _id: req.params.id })
+      Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
       .then(() => res.status(200).json({ message: 'Objet modifié !'}))
       .catch(error => res.status(400).json({ error }));
   };
 
-exports.deleteProduct = (req, res, next) => {
-  Product.findOne({ _id: req.params.id })
-  .then(product => {
-  const filename = product.imageUrl.split('/images/')[1];
+  exports.deleteSauce = (req, res, next) => {
+    Sauce.findOne({ _id: req.params.id })
+      .then(sauce => {
+      const filename = sauce.imageUrl.split('/images/')[1];
   fs.unlink(`images/${filename}`, () => {
-      Product.deleteOne({ _id: req.params.id })
+    Sauce.deleteOne({ _id: req.params.id })
       .then(() => res.status(200).json({ message: 'Objet supprimé !'}))
       .catch(error => res.status(400).json({ error }));
   });
@@ -57,9 +55,9 @@ exports.deleteProduct = (req, res, next) => {
 };
 
 exports.getAllSauces = (req, res, next) => {
-    Product.find().then(
-    (products) => {
-      res.status(200).json(products);
+  Sauce.find().then(
+    (sauces) => {
+      res.status(200).json(sauces);
     }
   ).catch(
     (error) => {
