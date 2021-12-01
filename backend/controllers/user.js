@@ -27,6 +27,7 @@ exports.signup = (req, res, next) => {
             .then(valid => {
             if (!valid) {
                 return res.status(401).json({ error: 'Mot de passe incorrect !' });
+              }
 
         res.status(200).json({
             userId: user._id,
