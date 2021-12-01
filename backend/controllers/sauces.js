@@ -67,3 +67,48 @@ exports.getAllSauces = (req, res, next) => {
     }
   );
 };
+
+exports.likedStatus = (req, res, next) => {
+
+  if (req.body.like === 1) { //si like est a 1
+      Sauce.updateOne( //On modifie celui dont l'ID est égale à l'ID envoyé dans les paramètres de requêtes avec Likes a 1 et userId dans le tableau usersLiked
+          { _id: req.params.id }, 
+          { $inc: { likes: 1 }, $push: { usersLiked: req.body.userId }}, 
+          { _id: req.params.id }
+      )
+        .then(() => res.status(200).json({ message: 'J\'aime' }))
+        .catch((error) => res.status(400).json({ error }));
+
+  } else if (req.body.like === -1) { //si like est a -1
+      Sauce.updateOne( //On modifie celui dont l'ID est égale à l'ID envoyé dans les paramètres de requêtes avec Dislikes a 1 et userId dans le tableau userDisLiked
+      { _id: req.params.id },
+      { $inc: { dislikes: 1 }, $push: { usersDisliked: req.body.userId }},
+      { _id: req.params.id }
+      )
+        .then(() => res.status(200).json({ message: 'Je n\'aime pas' }))
+        .catch((error) => res.status(400).json({ error }));
+
+  } else {
+      Sauce.findOne({ _id: req.params.id })
+      .then((sauce) => {
+          if (sauce.usersLiked.includes(req.body.userId)){ //si userId est présent dans le tableau usersLiked alors
+              Sauce.updateOne( //On modifie celui dont l'ID est égale à l'ID envoyé dans les paramètres de requêtes avec Like a -1 et en enlevant userId dans le tableau usersLiked
+              { _id: req.params.id },
+              { $inc: { likes: -1 }, $pull: { usersLiked: req.body.userId }},
+              { _id: req.params.id }
+              )
+                  .then(() => res.status(200).json({ message: 'Je n\'aime plus' }))
+                  .catch((error) => res.status(400).json({ error }));
+
+          } else if (sauce.usersDisliked.includes(req.body.userId)){ //si userId est présent dans le tableau usersDisliked alors
+              Sauce.updateOne( //On modifie celui dont l'ID est égale à l'ID envoyé dans les paramètres de requêtes avec Dislike a -1 et en enlevant userId dans le tableau usersDisliked
+              { _id: req.params.id },
+              { $inc: { dislikes: -1 }, $pull: { usersDisliked: req.body.userId }},
+              { _id: req.params.id }
+              )
+                  .then(() => res.status(200).json({ message: 'Je commence à aimer' }))
+                  .catch((error) => res.status(400).json({ error }));
+          }}
+      )
+      .catch((error) => res.status(400).json({ error }));
+}}
