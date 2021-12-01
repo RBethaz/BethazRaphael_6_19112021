@@ -7,7 +7,11 @@ exports.createSauce = (req, res, next) => {
   delete sauceObject._id;
   const sauce = new Sauce({
     ...sauceObject,
-      imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+    likes: 0,
+    dislikes: 0,
+    usersLiked: [' '],
+    usersdisLiked: [' '],
     });
     sauce.save()
       .then(() => res.status(201).json({ message: 'Objet enregistré !'}))
@@ -68,47 +72,44 @@ exports.getAllSauces = (req, res, next) => {
   );
 };
 
-exports.likedStatus = (req, res, next) => {
+// Like / Dislike une sauce
+exports.likeDislikeSauce = (req, res, next) => {
+  let like = req.body.like
+  let userId = req.body.userId
+  let sauceId = req.params.id
+          // Sauce liked
+  switch (like) {
+    case 1 :
+        Sauce.updateOne({ _id: sauceId }, { $push: { usersLiked: userId }, $inc: { likes: +1 }})
+          .then(() => res.status(200).json({ message: `J'aime` }))
+          .catch((error) => res.status(400).json({ error }))
 
-  if (req.body.like === 1) { //si like est a 1
-      Sauce.updateOne( //On modifie celui dont l'ID est égale à l'ID envoyé dans les paramètres de requêtes avec Likes a 1 et userId dans le tableau usersLiked
-          { _id: req.params.id }, 
-          { $inc: { likes: 1 }, $push: { usersLiked: req.body.userId }}, 
-          { _id: req.params.id }
-      )
-        .then(() => res.status(200).json({ message: 'J\'aime' }))
-        .catch((error) => res.status(400).json({ error }));
+      break;
+          // Annulation du like / dislike
+    case 0 :
+        Sauce.findOne({ _id: sauceId })
+           .then((sauce) => {
+            if (sauce.usersLiked.includes(userId)) { 
+              Sauce.updateOne({ _id: sauceId }, { $pull: { usersLiked: userId }, $inc: { likes: -1 }})
+                .then(() => res.status(200).json({ message: `Neutre` }))
+                .catch((error) => res.status(400).json({ error }))
+            }
+            if (sauce.usersDisliked.includes(userId)) { 
+              Sauce.updateOne({ _id: sauceId }, { $pull: { usersDisliked: userId }, $inc: { dislikes: -1 }})
+                .then(() => res.status(200).json({ message: `Neutre` }))
+                .catch((error) => res.status(400).json({ error }))
+            }
+          })
+          .catch((error) => res.status(404).json({ error }))
+      break;
+          // Sauce Disliked et mise à jour avec des new valeurs
+    case -1 :
+        Sauce.updateOne({ _id: sauceId }, { $push: { usersDisliked: userId }, $inc: { dislikes: +1 }})
+          .then(() => { res.status(200).json({ message: `Je n'aime pas` }) })
+          .catch((error) => res.status(400).json({ error }))
+      break;
 
-  } else if (req.body.like === -1) { //si like est a -1
-      Sauce.updateOne( //On modifie celui dont l'ID est égale à l'ID envoyé dans les paramètres de requêtes avec Dislikes a 1 et userId dans le tableau userDisLiked
-      { _id: req.params.id },
-      { $inc: { dislikes: 1 }, $push: { usersDisliked: req.body.userId }},
-      { _id: req.params.id }
-      )
-        .then(() => res.status(200).json({ message: 'Je n\'aime pas' }))
-        .catch((error) => res.status(400).json({ error }));
-
-  } else {
-      Sauce.findOne({ _id: req.params.id })
-      .then((sauce) => {
-          if (sauce.usersLiked.includes(req.body.userId)){ //si userId est présent dans le tableau usersLiked alors
-              Sauce.updateOne( //On modifie celui dont l'ID est égale à l'ID envoyé dans les paramètres de requêtes avec Like a -1 et en enlevant userId dans le tableau usersLiked
-              { _id: req.params.id },
-              { $inc: { likes: -1 }, $pull: { usersLiked: req.body.userId }},
-              { _id: req.params.id }
-              )
-                  .then(() => res.status(200).json({ message: 'Je n\'aime plus' }))
-                  .catch((error) => res.status(400).json({ error }));
-
-          } else if (sauce.usersDisliked.includes(req.body.userId)){ //si userId est présent dans le tableau usersDisliked alors
-              Sauce.updateOne( //On modifie celui dont l'ID est égale à l'ID envoyé dans les paramètres de requêtes avec Dislike a -1 et en enlevant userId dans le tableau usersDisliked
-              { _id: req.params.id },
-              { $inc: { dislikes: -1 }, $pull: { usersDisliked: req.body.userId }},
-              { _id: req.params.id }
-              )
-                  .then(() => res.status(200).json({ message: 'Je commence à aimer' }))
-                  .catch((error) => res.status(400).json({ error }));
-          }}
-      )
-      .catch((error) => res.status(400).json({ error }));
-}}
+      default:
+        console.log(error);
+  }
+} 
