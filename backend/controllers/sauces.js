@@ -1,5 +1,8 @@
 const Sauce = require('../models/sauce');
 const fs = require('fs');
+const LIKE = 1;
+const CANCEL = 0;
+const DISLIKE = -1;
 
 
 exports.createSauce = (req, res, next) => {
@@ -80,16 +83,17 @@ exports.likeDislikeSauce = (req, res, next) => {
           // Sauce liked
 
 switch (like) {
-  case 1 :
+  case LIKE :
       Sauce.updateOne({ _id: sauceId }, { $push: { usersLiked: userId }, $inc: { likes: +1 }})
         .then(() => res.status(200).json({ message: `J'aime` }))
         .catch((error) => res.status(400).json({ error }))
+        console.log(like); 
 
   break;
 
   // Annulation du like / dislike
 
-  case 0 :
+  case CANCEL :
       Sauce.findOne({ _id: sauceId })
           .then((sauce) => {
           if (sauce.usersLiked.includes(userId)) { 
@@ -109,7 +113,7 @@ switch (like) {
 
 // Sauce Disliked et mise à jour avec des nouvelles valeurs
 
-  case -1 :
+case DISLIKE :
       Sauce.updateOne({ _id: sauceId }, { $push: { usersDisliked: userId }, $inc: { dislikes: +1 }})
         .then(() => { res.status(200).json({ message: `Je n'aime pas` }) })
         .catch((error) => res.status(400).json({ error }))
