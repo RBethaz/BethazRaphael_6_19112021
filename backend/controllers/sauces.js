@@ -1,5 +1,6 @@
-const Sauce = require('../models/sauce');
-const fs = require('fs');
+
+const Sauce = require("../models/sauce");
+const fs = require("fs");
 const LIKE = 1;
 const CANCEL = 0;
 const DISLIKE = -1;

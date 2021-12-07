@@ -1,13 +1,13 @@
 //Import de bcrypt pour hashage du mot de passe
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 
 //Import de crypto-js pour chiffrer l'adresse mail
 const cryptojs = require("crypto-js");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 //Import des variables d'environnement
 require('dotenv').config();
 
-const User = require('../models/User');
+const User = require("../models/User");
 
 //Enregistrement d'un nouvel user dans la DB
 exports.signup = (req, res, next) => {
@@ -27,7 +27,7 @@ exports.signup = (req, res, next) => {
 
         //Envoi du user à la DB MongoDB  
         user.save()
-          .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
+          .then(() => res.status(201).json({ message: "Utilisateur créé !" }))
           .catch(error => res.status(400).json({ error }));
       })
       .catch(error => res.status(500).json({ error }));
@@ -45,7 +45,7 @@ exports.signup = (req, res, next) => {
     //Si le mail de l'user n'éxiste pas
         .then(user => {
         if (!user) {
-            return res.status(401).json({ error: 'Utilisateur non trouvé !' });
+            return res.status(401).json({ error: "Utilisateur non trouvé !" });
         }
         //Controler la validité du password envoyé par le front
         bcrypt.compare(req.body.password, user.password)
@@ -53,7 +53,7 @@ exports.signup = (req, res, next) => {
 
               //Si le password est invalide
             if (!valid) {
-                return res.status(401).json({ error: 'Mot de passe incorrect !' });
+                return res.status(401).json({ error: "Mot de passe incorrect !" });
               }
         //Si le password est valide
         //Envoi dans la réponse du serveur du userId et du token
