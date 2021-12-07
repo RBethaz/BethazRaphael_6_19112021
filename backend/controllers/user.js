@@ -1,14 +1,19 @@
+//Import de bcrypt pour hashage du mot de passe
 const bcrypt = require('bcrypt');
+
+//Import de crypto-js pour chiffrer l'adresse mail
+const cryptojs = require("crypto-js");
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const User = require('../models/User');
 
 exports.signup = (req, res, next) => {
+  const emailCryptoJs = cryptojs.HmacSHA256(req.body.email, process.env.CRYPTOJS_EMAIL).toString(cryptojs.enc.Base64);
     bcrypt.hash(req.body.password, 10)
       .then(hash => {
         const user = new User({
-          email: req.body.email,
+          email: emailCryptoJs,
           password: hash
         });
         user.save()
@@ -19,7 +24,8 @@ exports.signup = (req, res, next) => {
   };
 
   exports.login = (req, res, next) => {
-    User.findOne({ email: req.body.email })
+    const emailCryptoJs = cryptojs.HmacSHA256(req.body.email, process.env.CRYPTOJS_EMAIL).toString(cryptojs.enc.Base64);
+    User.findOne({ email: emailCryptoJs })
         .then(user => {
         if (!user) {
             return res.status(401).json({ error: 'Utilisateur non trouvé !' });
