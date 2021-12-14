@@ -5,7 +5,7 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 
 // Import du controller (logique metier) CRUD
-const saucesCtrl = require("../controllers/sauces");\
+const saucesCtrl = require("../controllers/sauces");
 
 // Permet de gerer l' upload d'images lors de l' ajout ou la modification d' une sauce
 const multerConfig = require("../middleware/multer-config");
