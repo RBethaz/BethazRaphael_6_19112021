@@ -1,6 +1,8 @@
 
 const Sauce = require("../models/sauce");
 const fs = require("fs");
+
+// --> Pour plus de lisibilite
 const LIKE = 1;
 const CANCEL = 0;
 const DISLIKE = -1;
@@ -10,7 +12,8 @@ exports.createSauce = (req, res, next) => {
   const sauceObject = JSON.parse(req.body.sauce);
   delete sauceObject._id;
   const sauce = new Sauce({
-    ...sauceObject,
+    ...sauceObject,// !!!!!!!!!!!!! (Spread operator) Rapatrie les données json sauceObject --> (req.body.sauce)
+    // On remplace les données déjà présentes dans le json par les nouvelles données --> M.A.J
     imageUrl: `${req.protocol}://${req.get("host")}/images/${
       req.file.filename
     }`,

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+// Implementation du schema de donnees de l' API
 const sauceSchema = mongoose.Schema({
   userId: { type: String, required: true },
   name: { type: String, required: true },
@@ -14,4 +15,5 @@ const sauceSchema = mongoose.Schema({
   usersDisliked: { type: [String], required: true },
 });
 
+// Export du schéma en tant que modèle Mongoose --> disponible pour l' app Express
 module.exports = mongoose.model('Sauce', sauceSchema);

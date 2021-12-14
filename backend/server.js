@@ -1,7 +1,10 @@
+// Import du package http
 const http = require("http");
+// Import de l'application
 const app = require("./app");
 const cors = require("cors");
 
+// Renvoie un port valide
 const normalizePort = (val) => {
     const port = parseInt(val, 10);
   
@@ -14,8 +17,11 @@ const normalizePort = (val) => {
     return false;
   };
   const port = normalizePort(process.env.PORT || "3000");
+
+  // On indique a express sur quel port elle va tourner
   app.set("port", port);
 
+// Recherche des différentes erreurs puis gestion de manière appropriée
   const errorHandler = (error) => {
   if (error.syscall !== "listen") {
       throw error;
@@ -38,6 +44,8 @@ const normalizePort = (val) => {
   };
   
   app.use(cors());
+
+  // Appel de la methode createServer du package http --> A chaque requete au serveur, cette fonction sera appelee 
   const server = http.createServer(app);
   
   server.on("error", errorHandler);

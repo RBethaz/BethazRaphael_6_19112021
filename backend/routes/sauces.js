@@ -1,9 +1,13 @@
 const express = require("express");
 const router = express.Router();
 
+// Verifier le token a chaque requete
 const auth = require("../middleware/auth");
 
-const saucesCtrl = require("../controllers/sauces");
+// Import du controller (logique metier) CRUD
+const saucesCtrl = require("../controllers/sauces");\
+
+// Permet de gerer l' upload d'images lors de l' ajout ou la modification d' une sauce
 const multerConfig = require("../middleware/multer-config");
 
 router.post("/", auth, multerConfig, saucesCtrl.createSauce);
