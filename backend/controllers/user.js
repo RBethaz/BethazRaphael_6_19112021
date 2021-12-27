@@ -1,89 +1,70 @@
-/// Import des models de la DB User.js
-const User = require("../models/User");
+const bcrypt = require('bcrypt'); //Permet de crypter le mot de passe
+const jwt = require('jsonwebtoken'); //Permet de créer et vérifier les tokens d'authentification
+const passwordValidator = require('password-validator'); //Permet d'avoir des critères sur le password
+const emailValidator = require("email-validator"); //Permet d'avoir un email valide
 
-// Import de bcrypt pour le hashage du mot de passe
-const bcrypt = require("bcrypt");
+const User = require('../models/user');
 
-// Import de crypto-js pour chiffrer l'adresse mail
-const cryptojs = require("crypto-js");
+require('dotenv').config()
 
-const jwt = require("jsonwebtoken");
 
-// Import des variables d'environnement
-require('dotenv').config();
+const schema = new passwordValidator(); //Configuration du modèle du password
+schema
+  .is().min(3) //longueur minimale de 3
+  .is().max(50) //longueur minimale de 50
+  .has().uppercase() //Majuscule obligatoire
+  .has().lowercase() //Minuscule obligatoire
+  .has().digits(1) // Au moins 1 chiffre
+  .has().not().spaces(); //Ne possède pas d'espace
 
-//------------------------------------------------------------------------------------
-// Enregistrement d'un nouvel user dans la DB
+
+
 exports.signup = (req, res, next) => {
+    if (!emailValidator.validate(req.body.email)){//si l'email n'est pas valide alors
+        return res.status(401).json({message: 'Veuillez entrer une adresse email valide'});
+    }
 
-// Chiffrage l'email avant de l'envoyer à la DB
-  const emailCryptoJs = cryptojs
-    .HmacSHA256(req.body.email, process.env.CRYPTOJS_EMAIL)
-    .toString(cryptojs.enc.Base64);
+    if (!schema.validate(req.body.password)){ //Si le password n'est pas valide // au schema
+        return res.status(401).json({message: 'Le mot de passe doit avoir une longueur de 3 a 50 caractères avec au moins un chiffre, une minuscule, une majuscule et ne possédant pas d\'espace !!!'});
+    };
 
-// Hash du mot de passe avant de l'envoyer à la DB
-// Comprendre la logique de création de token --> 3 parties du token
-  bcrypt
-    .hash(req.body.password, 10) // 10 --> salt (execution de l'algo de hashage)
-    .then((hash) => {
-
-    // --> Ce qui va etre enregistré par MongoDB
-      const user = new User({
-        email: emailCryptoJs,
-        password: hash,
-      });
-
-    // Envoi du user à la DB MongoDB  
-      user
-        .save()
-        .then(() => res.status(201).json({ message: "Utilisateur créé !" }))
-        .catch((error) => res.status(400).json({ error }));
-    })
-    .catch((error) => res.status(500).json({ error }));
-};
-
-//------------------------------------------------------------------------------------
-// Login pour s'authentifier
-exports.login = (req, res, next) => {
-
-// Chiffrer l'email de la requete  
-  const emailCryptoJs = cryptojs
-    .HmacSHA256(req.body.email, process.env.CRYPTOJS_EMAIL)
-    .toString(cryptojs.enc.Base64);
-
-// Chercher dans la DB si l'user est bien présent  
-  User.findOne({ email: emailCryptoJs })
-
-  // Si le mail de l'user n'éxiste pas
-    .then((user) => {
-      if (!user) {
-        return res.status(401).json({ error: "Utilisateur ou mot de passe incorrect !" });
-      }
-      //console.log(user);
-
-  // Controler la validité du password envoyé par le front    
-      bcrypt
-        .compare(req.body.password, user.password)
-        .then((valid) => {
-
-        // Si le password est invalide        
-          if (!valid) {
-            return res.status(401).json({ error: "Utilisateur ou mot de passe incorrect !" });
-          }
-
-        // Si le password est valide
-        // Envoi dans la réponse du serveur du userId et du token
-          res.status(200).json({
-          // Encodage de userId pour la création de nouveaux objets (lien entre objet et userId)
-            userId: user._id,
-            token: jwt.sign(
-              { userId: user._id }, 
-              `${process.env.SECRET_TOKEN}`, 
-              {expiresIn: "24h"}
-            ),
-          });
+    
+    bcrypt.hash(req.body.password, 10) //Permet de hash le password avec un salage de 10 tours
+        .then(hash =>{
+            const user = new User({ //Créé un nouvel utilisateur
+                email: req.body.email,
+                password: hash
+            });
+            
+            user.save() //Sauvegarde dans la base de données
+                .then(() => res.status(201).json({message: 'Utilisateur créé !'}))
+                .catch(error => res.status(400).json({error}));
+            
         })
-        .catch((error) => res.status(500).json({ error }));
-    })
-    .catch((error) => res.status(500).json({ error }));
+        .catch(error => res.status(500).json({error}));
+}
+//------------------------------------------------------------------------------------
+exports.login = (req, res, next) => {
+  User.findOne({email: req.body.email}) //Recherche l'email utilisateur dans la base de données
+      .then(user => {
+          if(!user){ //S'il n'existe pas alors
+              return res.status(401).json({error: 'Utilisateur non trouvé !'});
+          }
+          bcrypt.compare(req.body.password, user.password) //Compare le password utilisateur avec celui enregistré dans la base de données
+              .then(valid => { 
+                  if(!valid){ //Si différent alors
+                      return res.status(401).json({error: 'Mot de passe incorrect !'});
+                  }
+                  res.status(200).json({ //Sinon on renvoie cet objet
+                      userId: user._id,
+                      token: jwt.sign(
+                          {userId: user._id}, //Données encodés
+                          process.env.SECRET_TOKEN, //Clé secrete
+                          {expiresIn: '24h'} //Durée d'expiration du token
+                      )
+                  }); 
+              })
+              .catch(error => res.status(500).json({error}));
+      })
+      .catch(error => res.status(500).json({error}));
 };
